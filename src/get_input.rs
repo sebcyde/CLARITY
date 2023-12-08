@@ -1,18 +1,17 @@
 pub mod input {
 
     pub async fn send_output(content: &str) {
-        println!("CLARITY: {}\n", content)
+        println!("\n{}\n", content)
     }
 
-    pub async fn get_input() -> String {
+    pub async fn get_input() -> Result<String, std::io::Error> {
         let mut input = String::new();
         match std::io::stdin().read_line(&mut input) {
-            Ok(n) => {
-                println!("{} bytes read", n);
-                println!("{}", &input);
-                return input;
+            Ok(_) => Ok(input),
+            Err(error) => {
+                println!("Error: {:?}", error);
+                Err(error)
             }
-            Err(error) => println!("error: {error}"),
         }
     }
 }
