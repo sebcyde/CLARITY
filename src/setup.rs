@@ -1,6 +1,6 @@
 pub mod setup {
     use serde::Serialize;
-    use toml::to_string;
+    use serde_json::Value;
 
     use crate::get_dirs::get_dirs::{get_config_file, get_config_root};
     use crate::get_input::input::{get_input, send_output};
@@ -10,42 +10,41 @@ pub mod setup {
     use std::path::PathBuf;
 
     #[derive(Serialize)]
-    struct TomlConfig {
+    struct UserConfig {
         user_name: String,
+        watch_documents: bool,
+        watch_downloads: bool,
     }
 
     pub async fn set_config_files() {
         println!("Starting initial setup.");
         send_output("Welcome to Clarity! What's your name?").await;
-        let potential_user_name: Result<String, std::io::Error> = get_input().await;
-        create_config_file(&potential_user_name.unwrap()).await;
+        let user_name = get_input().await;
+        create_config_file(&user_name.unwrap()).await;
     }
 
-    pub async fn get_config_files() {
+    pub async fn get_config_data() -> Value {
         let config_path: PathBuf = get_config_file();
-
-        let config_str = read_to_string(config_path).expect("Failed to read config file");
-
-        println!("Config: {:?}", config_str);
-
-        // let cargo_toml: CargoToml =
-        //     toml::from_str(&config_string).expect("Failed to deserialize Cargo.toml");
-
-        // println!("{:#?}", cargo_toml);
+        println!("config_path: {:?}", config_path);
+        let config_value: String = read_to_string(config_path).unwrap();
+        let config: Value = serde_json::from_str(&config_value).expect("Failed to deserialize.");
+        return config;
     }
-
-    // pub async fn get_user() {
-    //     let config_path: PathBuf = get_config_file();
-    //     println!("{:?}", config_path);
-    // }
 
     async fn create_config_file(name: &str) {
-        let config_path = get_config_file();
-        let mut config_file = File::create(&config_path).unwrap();
-        let config = TomlConfig {
-            user_name: name.to_owned(),
+        let config_path: PathBuf = get_config_root();
+        std::fs::create_dir_all(&config_path).unwrap();
+
+        let config_path: PathBuf = get_config_file();
+        let mut config_file: File = File::create(&config_path).unwrap();
+
+        let user_config: UserConfig = UserConfig {
+            user_name: name.trim_end_matches(&['\r', '\n'][..]).to_owned(),
+            watch_documents: false,
+            watch_downloads: true,
         };
-        let toml_string = to_string(&config).unwrap();
-        _ = config_file.write_all(toml_string.as_bytes());
+
+        let json_data: String = serde_json::to_string(&user_config).unwrap();
+        _ = config_file.write_all(json_data.as_bytes());
     }
 }
