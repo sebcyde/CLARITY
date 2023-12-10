@@ -1,27 +1,25 @@
 pub mod watch {
-    use crate::configuration::configuration::{get_config_data, UserConfig};
+    use crate::{
+        configuration::configuration::{get_config_data, UserConfig},
+        editor::editor::process_file,
+        get_dirs::get_dirs::get_downloads_dir,
+    };
     use notify::{Config, ReadDirectoryChangesWatcher, RecommendedWatcher, RecursiveMode, Watcher};
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     pub async fn start_watch() {
         println!("Welcome. Starting watch.");
+
         let config_data: UserConfig = get_config_data().await;
+        // let is_watching_docouments: bool = config_data.watch_settings.watch_documents;
+        let is_watching_downloads: bool = config_data.watch_settings.watch_downloads;
+        let downloads_path: PathBuf = get_downloads_dir();
 
-        println!("User Name Config: {}", config_data.user_data.user_name);
-        println!(
-            "Watch Downloads Config: {}",
-            config_data.watch_settings.watch_downloads
-        );
-        println!(
-            "Watch Docs Config: {}",
-            config_data.watch_settings.watch_documents
-        );
-
-        println!("Sort By Date: {}", config_data.watch_settings.sort_by_date);
-
-        // loop {
-
-        // }
+        loop {
+            if is_watching_downloads {
+                _ = watch_folder(&downloads_path)
+            }
+        }
     }
 
     fn watch_folder<P: AsRef<Path>>(path: P) -> notify::Result<()> {
@@ -34,13 +32,26 @@ pub mod watch {
         // Path to be watched - Non-Recursive Mode
         watcher.watch(path.as_ref(), RecursiveMode::NonRecursive)?;
 
-        // for res in rx {
-        //     match res {
-        //         Ok(event) => {}
-        //         Err(e) => println!("watch error: {:?}", e),
-        //     }
-
-        Ok(())
-        // }
+        Ok(for res in rx {
+            match res {
+                Ok(event) => match event.kind {
+                    notify::EventKind::Access(a) => {
+                        println!("Access Event: {:?}.", a)
+                    }
+                    notify::EventKind::Create(c) => {
+                        println!("\nCreate Event Triggered.\n");
+                        process_file(event.paths[0].to_owned());
+                    }
+                    notify::EventKind::Modify(m) => {
+                        // println!("Modify Event: {:?}.", m)
+                    }
+                    notify::EventKind::Remove(r) => {
+                        // println!("Remove Event: {:?}.", r)
+                    }
+                    _ => println!("Unreachable Code."),
+                },
+                Err(e) => println!("watch error: {:?}", e),
+            }
+        })
     }
 }

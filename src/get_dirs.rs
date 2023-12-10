@@ -1,11 +1,18 @@
 pub mod get_dirs {
-    use dirs::{config_dir, document_dir, download_dir};
+    use dirs::{config_dir, document_dir, download_dir, home_dir};
     use std::path::PathBuf;
 
     pub fn get_config_root() -> PathBuf {
         let mut config_root: PathBuf = config_dir().unwrap();
         config_root.push("Clarity");
         return config_root;
+    }
+
+    pub fn get_clarity_directory() -> PathBuf {
+        let mut documents_dir: PathBuf = home_dir().unwrap();
+        documents_dir.push("Documents");
+        documents_dir.push("Clarity");
+        return documents_dir;
     }
 
     pub fn get_config_file() -> PathBuf {
@@ -21,7 +28,8 @@ pub mod get_dirs {
     }
 
     pub fn get_documents_dir() -> PathBuf {
-        let documents_dir: PathBuf = document_dir().unwrap();
+        let mut documents_dir: PathBuf = home_dir().unwrap();
+        documents_dir.push("Documents");
         return documents_dir;
     }
 }
