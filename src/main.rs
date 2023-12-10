@@ -1,27 +1,18 @@
+mod configuration;
 mod get_dirs;
 mod get_input;
-mod setup;
+mod watch;
 
-use crate::get_dirs::get_dirs::get_config_root;
-use crate::setup::setup::set_config_files;
-use std::{
-    path::{Path, PathBuf},
-    process,
-};
+use crate::configuration::configuration::setup_config;
+use crate::watch::watch::start_watch;
+use std::process;
 
 #[tokio::main]
 async fn main() {
     println!("\nStarting CLARITY...");
-    println!("Retreiving config...");
 
-    let config_dir_path: PathBuf = get_config_root();
-    if !Path::new(&config_dir_path).exists() {
-        println!("No config file detected.");
-        set_config_files().await
-    }
-
-    println!("Welcome. Starting watch.");
-    // let config_data = get_config_data().await;
+    setup_config().await;
+    start_watch().await;
 
     println!("Stopping...");
     process::exit(0);
